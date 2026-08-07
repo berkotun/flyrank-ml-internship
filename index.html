@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Predicting SEO Content Decay — Berk Ötün | FlyRank ML Internship</title>
+<style>
+:root{--ink:#12151a;--muted:#5b6472;--line:#e5e8ee;--accent:#2f6df6}
+*{box-sizing:border-box}
+body{margin:0;background:#fafbfc;color:var(--ink);font:16px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+main{max-width:820px;margin:0 auto;padding:56px 22px 80px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 8px}
+h2{font-size:1.25rem;margin:44px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+.byline{color:var(--muted);margin:0 0 28px}
+.abstract{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.abstract p{margin:8px 0 0}
+table{border-collapse:collapse;width:100%;background:#fff;margin:14px 0}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+th{background:#f2f5f9}
+.win{font-weight:600;color:var(--accent)}
+.chart{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:16px 0}
+.row{display:flex;align-items:center;gap:12px;margin:10px 0}
+.row span{width:92px;color:var(--muted);font-size:.9rem}
+.bar{height:14px;border-radius:7px}
+.b1{background:#ff9999}.b2{background:#66b3ff}
+.legend{color:var(--muted);font-size:.85rem;margin-top:10px}
+ul{padding-left:20px}
+footer{margin-top:48px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>Predicting SEO Content Decay: A Machine Learning Approach to Identify Underperforming Search Assets</h1>
+<p class="byline">Berk Ötün · Machine Learning Intern, FlyRank AI Internship 2026</p>
+
+<div class="abstract">
+<strong>Abstract</strong>
+<p>Identifying content that underperforms in Google Search is critical for maintaining digital visibility. This work asks whether a machine learning model can predict which pages need an SEO refresh more reliably than a static heuristic rule. Using a Random Forest classifier trained on Google Search Console metrics, decaying content was modelled and validated with a client-grouped split for honest evaluation. The model outperformed the rule-based baseline, reaching an F1-score of 0.983 on unseen clients. The result is a directional decision-support tool that helps SEO teams prioritise manual content audits.</p>
+</div>
+
+<h2>1. Question</h2>
+<p>How can "high-rank, low-click" decaying content be identified across large numbers of URLs without relying on rigid static rules? The goal is a directional decision-support tool that helps marketing teams prioritise their content refresh pipeline instead of auditing pages manually.</p>
+
+<h2>2. Data</h2>
+<ul>
+<li><strong>Source:</strong> the March 2026 release of the <code>fact_content_daily_performance</code> table from the FlyRank internship data warehouse.</li>
+<li><strong>Scope:</strong> daily Google Search Console performance metrics across multiple clients, aggregated per client and content ID.</li>
+<li><strong>Exclusions:</strong> personally identifiable information, client names and raw search queries were excluded to keep the work public-safe.</li>
+</ul>
+
+<h2>3. Methodology</h2>
+<ul>
+<li><strong>Label:</strong> a page is flagged as problematic when it has more than 100 impressions and an average position of 20 or better, yet a CTR below 1%.</li>
+<li><strong>Features:</strong> <code>gsc_impressions</code>, <code>gsc_avg_position</code>, <code>content_age_days</code>.</li>
+<li><strong>Leakage control:</strong> <code>gsc_clicks</code> was dropped explicitly because it feeds the CTR formula behind the label; feature importance confirmed no single feature carried more than 95% of the weight.</li>
+<li><strong>Baseline:</strong> the Week-4 heuristic rule (position &lt;= 10 and CTR &lt; 0.01).</li>
+<li><strong>Validation:</strong> <code>GroupShuffleSplit</code> on <code>client_hash_id</code>, so the model is scored only on client domains it never saw during training.</li>
+</ul>
+
+<h2>4. Results</h2>
+<table>
+<tr><th>Metric</th><th>Baseline (rule)</th><th>Random Forest</th></tr>
+<tr><td>Precision</td><td>1.000</td><td>0.966</td></tr>
+<tr><td>Recall</td><td>0.671</td><td class="win">1.000</td></tr>
+<tr><td>F1-score</td><td>0.803</td><td class="win">0.983</td></tr>
+</table>
+<div class="chart">
+<div class="row"><span>Precision</span><div class="bar b1" style="width:60%"></div></div>
+<div class="row"><span></span><div class="bar b2" style="width:58%"></div></div>
+<div class="row"><span>Recall</span><div class="bar b1" style="width:40%"></div></div>
+<div class="row"><span></span><div class="bar b2" style="width:60%"></div></div>
+<div class="row"><span>F1-score</span><div class="bar b1" style="width:48%"></div></div>
+<div class="row"><span></span><div class="bar b2" style="width:59%"></div></div>
+<p class="legend">Model vs baseline on the same grouped split — pink: baseline rule, blue: Random Forest.</p>
+</div>
+<p>The measured gain sits in recall: the static rule misses roughly a third of the decaying pages, while the learned model surfaces them on unseen client domains.</p>
+
+<h2>5. Limitations</h2>
+<ul>
+<li><strong>Directional only.</strong> The model gives a directional indicator of decay measured purely on Search Console data; it has no view of business conversions or backlink profiles.</li>
+<li><strong>No auto-execution.</strong> A low score does not mean the page is bad — it may be a navigational brand page. Outputs are decision-support signals, not automated triggers.</li>
+<li>No claim is made about Google's ranking algorithm or causal refresh impact.</li>
+</ul>
+
+<h2>6. Ranked recommendations</h2>
+<ul>
+<li><strong>Priority 1 — Content refresh (R-01):</strong> high impressions (&gt;500), average position &lt;= 15, CTR &lt; 0.01 → send to editorial for metadata and title rewrites.</li>
+<li><strong>Priority 2 — Technical SEO audit (R-02):</strong> ranking in the top three but not earning clicks → investigate SERP layout, zero-click intent or technical issues.</li>
+<li><strong>Priority 3 — Prune / consolidate (R-03):</strong> stale content older than 365 days with zero clicks → evaluate for a 301 redirect.</li>
+<li><strong>No-go list:</strong> homepage, legal pages and core pricing pages are excluded from automated pruning; page deletions are never automated on this score.</li>
+</ul>
+
+<h2>7. Reproducibility</h2>
+<p>All notebooks and the full pipeline live in the public repository: <a href="https://github.com/berkotun/flyrank-ml-internship">github.com/berkotun/flyrank-ml-internship</a>. The capstone notebook is at <a href="https://github.com/berkotun/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb">work/notebooks/capstone.ipynb</a>, weekly assignment notebooks are in the same folder, and random seeds are fixed (<code>random_state=42</code>) so a fresh clone reproduces the reported numbers.</p>
+
+<h2>8. Acknowledgments &amp; data credit</h2>
+<p>Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai">flyrank.ai</a>. Track lead: Mirza Ašćerić.</p>
+
+<footer>Berk Ötün · FlyRank AI Internship, Machine Learning track · 2026</footer>
+</main>
+</body>
+</html>
